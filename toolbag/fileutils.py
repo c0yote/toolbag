@@ -1,9 +1,12 @@
+from datetime import datetime
 import hashlib
 from functools import partial
 import multiprocessing
 import os
+import shutil
+import time
 
-from hash import hash_file_in_chunks
+from hash import hash_file_in_chunks_to_hex_str
 
 # Good Idea Fairy
 # - Argument to make non-recursive.
@@ -13,13 +16,13 @@ from hash import hash_file_in_chunks
 files_hashed_count = 0
 
 def hash_file_to_hex_str(filename):
-  return hash_file_in_chunks(filename, hashlib.md5()).hexdigest()
+  return hash_file_in_chunks_to_hex_str(filename, hashlib.md5())
 
 def hash_file_to_hash_file_tuple(filename):
   return (hash_file_to_hex_str(filename), filename)
 
 def _get_file_unrepresented_in_archive(archive_hash_list, filename):
-  hash_string = hash_file_in_chunks(filename, hashlib.md5()).hexdigest()
+  hash_string = hash_file_in_chunks_to_hex_str(filename, hashlib.md5())
   if hash_string not in archive_hash_list:
     return filename
 
@@ -62,7 +65,19 @@ def _dupl_main(args):
       print('    '+str(v))
   
 def _evac_main(args):
-  pass
+  while True:
+    print('Waiting for data to mount.')
+    while not os.path.isdir(args.mondir):
+      time.sleep(1)
+      
+    print('Copying files.')
+    dest_path = os.path.join(args.dest, datetime.now().strftime("%Y-%m-%d %H_%M_%S"))
+    shutil.copytree(args.mondir, dest_path)
+    print('Copy complete.')
+    
+    print('Waiting for unmount.')
+    while os.path.isdir(args.mondir):
+      time.sleep(1)    
   
 def _repr_main(args):
   print('Checking for representation...')
@@ -105,6 +120,7 @@ def _build_argument_parser():
 
   import argparse
   parser = argparse.ArgumentParser(description=ROOT_PARSER_DESC)
+  parser.set_defaults(func=None)
   subparsers = parser.add_subparsers(help=SUB_PARSER_HELP)
   
   repr_parser = subparsers.add_parser('repr', help=REPR_PARSER_HELP)
@@ -130,4 +146,9 @@ def _build_argument_parser():
 if __name__ == '__main__':
   parser = _build_argument_parser()
   args = parser.parse_args()
-  args.func(args)
+  
+  if args.func:
+    args.func(args)
+  else:
+    parser.print_help()
+  

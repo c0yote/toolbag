@@ -11,9 +11,8 @@ TEST_DATA_SHA256 = '1307990e6ba5ca145eb35e99182a9bec46531bc54ddf656a602c780fa024
 TEST_FILE_PATH = '/path/to/file'
 
 class HashFileInChunksToHexStr_Func_TestCase(unittest.TestCase):
-  
   @patch('builtins.open', new_callable=mock_open, read_data=TEST_DATA_RAW)
-  def test_returns_hash_strings(self, mock_file):
+  def test_returns_hash_strings(self, open_):
     hash_object = hashlib.md5()
     self.assertEqual(
       hash.hash_file_in_chunks_to_hex_str(TEST_FILE_PATH, hash_object),
@@ -25,18 +24,22 @@ class HashFileInChunksToHexStr_Func_TestCase(unittest.TestCase):
       TEST_DATA_SHA256)
     
   @patch('builtins.open', new_callable=mock_open, read_data=TEST_DATA_RAW)
-  def test_opens_file_rb_mode(self, mock_file):
+  def test_opens_file_rb_mode(self, open_):
     mock_hash_object = MagicMock()
     hash.hash_file_in_chunks_to_hex_str(TEST_FILE_PATH, mock_hash_object)
-    mock_file.assert_called_with(TEST_FILE_PATH, 'rb')
+    open_.assert_called_with(TEST_FILE_PATH, 'rb')
   
-  def test_uses_default_buffer_size(self):
-    mock_file = MagicMock()
-    with patch('builtins.open', mock_open(mock_file, read_data=TEST_DATA_RAW)) as the_mock_open:
+  @patch('builtins.open', new_callable=mock_open, read_data=TEST_DATA_RAW)
+  def test_uses_default_buffer_size(self, open_):
+    mock_hash_object = MagicMock()
+    hash.hash_file_in_chunks_to_hex_str(TEST_FILE_PATH, mock_hash_object)
+    handle = open_()
+    handle.read.assert_called_with(hash.DEFAULT_HASHING_CHUNK_SIZE)
     
-      mock_hash_object = MagicMock()
-      hash.hash_file_in_chunks_to_hex_str(TEST_FILE_PATH, mock_hash_object)
-      mock_file.read.assert_called_with(hash.DEFAULT_HASHING_BUFFER_SIZE)
-      print('outside: '+str(mock_file))
-    
-  #def test_setting_chunk_size
+  @patch('builtins.open', new_callable=mock_open, read_data=TEST_DATA_RAW)
+  def test_setting_chunk_size_set(self, open_):
+    TEST_BUFFER_SIZE_VALUE = 123456789
+    mock_hash_object = MagicMock()
+    hash.hash_file_in_chunks_to_hex_str(TEST_FILE_PATH, mock_hash_object, TEST_BUFFER_SIZE_VALUE)
+    handle = open_()
+    handle.read.assert_called_with(TEST_BUFFER_SIZE_VALUE)

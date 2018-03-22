@@ -9,6 +9,28 @@ TEST_DATA_RAW = 'some data'.encode()
 TEST_DATA_MD5 = '1e50210a0202497fb79bc38b6ade6c34'
 TEST_DATA_SHA256 = '1307990e6ba5ca145eb35e99182a9bec46531bc54ddf656a602c780fa0240dee'
 TEST_FILE_PATH = '/path/to/file'
+TEST_STRING = 'THIS IS A TEST STRING'
+
+class FileHash_Class_TestCase(unittest.TestCase):
+  @patch('toolbag.hash.hash_file_in_chunks_to_hex_str', return_value=TEST_STRING)
+  def test_constructor_sets_member_vars_and_computes_hash(self, hash_func_mock):
+    mock_hash_object = MagicMock()
+    TEST_HASH_NAME = 'MD5'
+    TEST_FILENAME = 'test.txt'
+    
+    fn = hash.FileHash(TEST_HASH_NAME, mock_hash_object, TEST_FILENAME)
+    self.assertEqual(fn.hash_name, TEST_HASH_NAME)
+    self.assertEqual(fn.hash_string, TEST_STRING)
+    hash_func_mock.assert_called_with(TEST_FILENAME, mock_hash_object)
+    
+  @patch('toolbag.hash.hash_file_in_chunks_to_hex_str', return_value=TEST_STRING)
+  def test__str__func(self, hash_func_mock):
+    mock_hash_object = MagicMock()
+    TEST_HASH_NAME = 'MD5'
+    TEST_FILENAME = 'test.txt'
+    
+    fn = hash.FileHash(TEST_HASH_NAME, mock_hash_object, TEST_FILENAME)
+    self.assertEqual(str(fn), f'{TEST_HASH_NAME:<10}{TEST_STRING}')
 
 class HashFileInChunksToHexStr_Func_TestCase(unittest.TestCase):
   @patch('builtins.open', new_callable=mock_open, read_data=TEST_DATA_RAW)

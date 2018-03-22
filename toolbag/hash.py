@@ -52,11 +52,9 @@ def _get_all_supported_hashes():
     
 def _get_selected_algorithms(alg_args):
   if alg_args:
-    selected_algorithms = args.algs.split(',')
+    return args.algs.split(',')
   else:
-    selected_algorithms = _get_all_supported_hashes()
-    
-  return selected_algorithms
+    return _get_all_supported_hashes()
     
 def _get_supported_hashes_str():
   hashes_list_str = ''
@@ -71,8 +69,8 @@ def _main(args):
   filename = args.file
   selected_algs = _get_selected_algorithms(args.algs)
   
-  for r in _build_hashes(filename, selected_algs):
-    print(r)
+  for hash in _build_hashes(filename, selected_algs):
+    print(hash)
   
 def _build_argument_parser():
   DESCRIPTION = 'Compute the hash of a file. Supports: '+_get_supported_hashes_str()

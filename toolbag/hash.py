@@ -43,7 +43,7 @@ def _build_hashes(filename, selected_algorithms):
 
   return hashes
   
-def _confirm_file_exists(filename):
+def _exit_if_no_file_exists(filename):
   if not os.path.isfile(filename):
     sys.exit('Could not locate file: \''+filename+'\'')
 
@@ -64,7 +64,7 @@ def _get_supported_hashes_str():
   return hashes_list_str
     
 def _main(args):
-  _confirm_file_exists(args.file)
+  _exit_if_no_file_exists(args.file)
   
   filename = args.file
   selected_algs = _get_selected_algorithms(args.algs)

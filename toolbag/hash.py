@@ -15,76 +15,85 @@ def hash_file_in_chunks_to_hex_str(filename, hash_object,
       chunk = file.read(chunk_size)
   return hash_object.hexdigest()
 
-class FileHash:
+class _FileHash:
   def __init__(self, hash_name, hash_object, filename):
     self.hash_name = hash_name
-    self.hash_string = hash_file_in_chunks_to_hex_str(filename, hash_object)
+    self.hash_str = hash_file_in_chunks_to_hex_str(filename, hash_object)
     
   def __str__(self):
-    return f'{self.hash_name:<10}{self.hash_string}'
+    return f'{self.hash_name:<10}{self.hash_str}'
 
-_LABEL = 0
-_HASH_OBJECT_CONSTRUCTOR = 1
-# Adding a hash to this dict automatically implements complete support for it.
-_SUPPORTED_HASHES = {
-  'md5': ('MD5', hashlib.md5),
-  'sha1': ('SHA1', hashlib.sha1),
-  'sha256': ('SHA256', hashlib.sha256),
-}
+class _Application:
+  LABEL = 0
+  HASH_OBJECT_CONSTRUCTOR = 1
+  # Adding a hash to this dict automatically implements functional, argument, 
+  # and help listing support for it.
+  SUPPORTED_HASHES = {
+    'md5': ('MD5', hashlib.md5),
+    'sha1': ('SHA1', hashlib.sha1),
+    'sha256': ('SHA256', hashlib.sha256),
+  }
 
-def _build_hashes(filename, selected_algorithms):
-  hashes = list()
-  for alg in selected_algorithms:
-    hash_alg = _SUPPORTED_HASHES[alg]
-    label = hash_alg[_LABEL]
-    hash_obj = hash_alg[_HASH_OBJECT_CONSTRUCTOR]()
+  def __init__(self):
+    arg_parser = self.build_argument_parser()
+    self.args = arg_parser.parse_args()
+    self.filename = self.args.file
+    self.selected_algs = self.get_selected_algorithms()
     
-    hashes.append(FileHash(label, hash_obj, filename))
-
-  return hashes
-  
-def _exit_if_no_file_exists(filename):
-  if not os.path.isfile(filename):
-    sys.exit('Could not locate file: \''+filename+'\'')
-
-def _get_all_supported_hashes():
-  return _SUPPORTED_HASHES.keys()
+  def run(self):
+    self.exit_if_no_file_exists()
+    self.compute_hashes()
     
-def _get_selected_algorithms(alg_args):
-  if alg_args:
-    return args.algs.split(',')
-  else:
-    return _get_all_supported_hashes()
+    for hash in self.hashes:
+      print(hash)
+  
+  def build_argument_parser(self):
+    ARG_FILE_HELP = 'The file to hash.'
+    ARG_ALGS_HELP = 'choose hashing algorithms to use (ex. --algs=md5,sha256)'
+    description = self.get_app_description()
     
-def _get_supported_hashes_str():
-  hashes_list_str = ''
-  for k,v in _SUPPORTED_HASHES.items():
-    hashes_list_str += ' ' + k
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument('file', help=ARG_FILE_HELP)
+    parser.add_argument('--algs', help=ARG_ALGS_HELP, type=str)
+    return parser
+  
+  def exit_if_no_file_exists(self):
+    if not os.path.isfile(self.filename):
+      sys.exit('Could not locate file: \''+self.filename+'\'')
+  
+  def get_selected_algorithms(self):
+    algorithm_args = self.args.algs
+    if algorithm_args:
+      return args.algs.split(',')
+    else:
+      return self.get_all_supported_hashes()
+  
+  def compute_hashes(self):
+    self.hashes = list()
+    for alg in self.selected_algs:
+      hash_alg = _Application.SUPPORTED_HASHES[alg]
+      label = hash_alg[_Application.LABEL]
+      hash_obj = hash_alg[_Application.HASH_OBJECT_CONSTRUCTOR]()
+      
+      self.hashes.append(_FileHash(label, hash_obj, self.filename))
 
-  return hashes_list_str
+  def get_app_description(self):
+    algorithm_list = _Application.get_supported_hashes_str()
+    return f'Compute the hash of a file. Supports: {algorithm_list}'
     
-def _main(args):
-  _exit_if_no_file_exists(args.file)
+  def get_all_supported_hashes(self):
+    return _Application.SUPPORTED_HASHES.keys()
   
-  filename = args.file
-  selected_algs = _get_selected_algorithms(args.algs)
-  
-  for hash in _build_hashes(filename, selected_algs):
-    print(hash)
-  
-def _build_argument_parser():
-  DESCRIPTION = 'Compute the hash of a file. Supports: '+_get_supported_hashes_str()
-  ARG_FILE_HELP = 'The file to hash.'
-  ARG_ALGS_HELP = 'choose hashing algorithms to use (ex. --algs=md5,sha256)'
-  
-  parser = argparse.ArgumentParser(description=DESCRIPTION)
-  parser.add_argument('file', help=ARG_FILE_HELP)
-  parser.add_argument('--algs', help=ARG_ALGS_HELP, type=str)
-  parser.set_defaults(func=_main)
-  return parser
+  @staticmethod
+  def get_supported_hashes_str():
+    hashes_list_str = ''
+    for k,v in _Application.SUPPORTED_HASHES.items():
+      hashes_list_str += ' ' + k
+
+    return hashes_list_str
+
   
 if __name__ == '__main__':
-  arg_parser = _build_argument_parser()
-  args = arg_parser.parse_args()
-  args.func(args)
-    
+  app = _Application()
+  app.run()
+  

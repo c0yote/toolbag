@@ -15,6 +15,7 @@ def hash_file_in_chunks_to_hex_str(filename, hash_object,
       chunk = file.read(chunk_size)
   return hash_object.hexdigest()
 
+  
 class _FileHash:
   def __init__(self, hash_name, hash_object, filename):
     self.hash_name = hash_name
@@ -23,6 +24,7 @@ class _FileHash:
   def __str__(self):
     return f'{self.hash_name:<10}{self.hash_str}'
 
+    
 class _Application:
   LABEL = 0
   HASH_OBJECT_CONSTRUCTOR = 1
@@ -42,7 +44,7 @@ class _Application:
     
   def run(self):
     self.exit_if_no_file_exists()
-    self.compute_hashes()
+    self.hashes = self.compute_hashes()
     
     for hash in self.hashes:
       print(hash)
@@ -50,7 +52,7 @@ class _Application:
   def build_argument_parser(self):
     ARG_FILE_HELP = 'The file to hash.'
     ARG_ALGS_HELP = 'choose hashing algorithms to use (ex. --algs=md5,sha256)'
-    description = self.get_app_description()
+    description = _Application.get_description()
     
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('file', help=ARG_FILE_HELP)
@@ -64,35 +66,41 @@ class _Application:
   def get_selected_algorithms(self):
     algorithm_args = self.args.algs
     if algorithm_args:
-      return args.algs.split(',')
+      return algorithm_args.split(',')
     else:
-      return self.get_all_supported_hashes()
+      return _Application.get_all_supported_algorithms()
   
   def compute_hashes(self):
-    self.hashes = list()
+    hashes = list()
     for alg in self.selected_algs:
       hash_alg = _Application.SUPPORTED_HASHES[alg]
       label = hash_alg[_Application.LABEL]
       hash_obj = hash_alg[_Application.HASH_OBJECT_CONSTRUCTOR]()
       
-      self.hashes.append(_FileHash(label, hash_obj, self.filename))
+      hashes.append(_FileHash(label, hash_obj, self.filename))
+      
+    return hashes
 
-  def get_app_description(self):
+  @staticmethod
+  def get_description():
     algorithm_list = _Application.get_supported_hashes_str()
     return f'Compute the hash of a file. Supports: {algorithm_list}'
-    
-  def get_all_supported_hashes(self):
+  
+  @staticmethod
+  def get_all_supported_algorithms():
     return _Application.SUPPORTED_HASHES.keys()
   
   @staticmethod
   def get_supported_hashes_str():
     hashes_list_str = ''
     for k,v in _Application.SUPPORTED_HASHES.items():
-      hashes_list_str += ' ' + k
+      hashes_list_str += k + ' '
 
+    hashes_list_str = hashes_list_str.rstrip()
+    
     return hashes_list_str
 
-  
+
 if __name__ == '__main__':
   app = _Application()
   app.run()

@@ -11,6 +11,8 @@ TEST_DATA_SHA256 = '1307990e6ba5ca145eb35e99182a9bec46531bc54ddf656a602c780fa024
 TEST_FILE_PATH = '/path/to/file'
 TEST_STRING = 'THIS IS A TEST STRING'
 TEST_SIMPLE_ARGS = ['app', TEST_FILE_PATH]
+TEST_HASH_CHOICE_ARGS = ['app', '--algs=md5,sha1', TEST_FILE_PATH]
+TEST_ARG_SELECTED_ALGS = ['md5', 'sha1']
 
 class FileHash_Class_TestCase(unittest.TestCase):
   @patch('toolbag.hash.hash_file_in_chunks_to_hex_str', return_value=TEST_STRING)
@@ -53,17 +55,36 @@ class HashApplication_Class_TestCase(unittest.TestCase):
     exit_mock.assert_not_called()
   
   @patch('sys.argv', TEST_SIMPLE_ARGS)
-  def test_get_all_supported_hashes_returns_supported_hashes(self):
+  def test_get_all_supported_algorithms_returns_supported_hash_algorithms(self):
     app = hash._Application()
     self.assertEqual(hash._Application.SUPPORTED_HASHES.keys(), 
-                     app.get_all_supported_hashes())
+                     app.get_all_supported_algorithms())
   
-  #def test_run_checks_for_file_existence(self):
-  #def test_get_selected_algorithms_returns_all_supported_on_none(self):
-  #def test_get_selected_algorithms_splits_args_on_commas(self):
-  #def test_get_supported_hashes_str_returns_all_supported_hashes(self):
-  #def test_main_exits_instead_of_excepting_on_nonexistent_file(self):
-  #def test_build_argument_parser_contains_required_arguments(self):
+  @patch('sys.argv', TEST_SIMPLE_ARGS)
+  @patch('toolbag.hash._Application.compute_hashes')
+  @patch('toolbag.hash._Application.exit_if_no_file_exists')
+  def test_run_checks_for_file_existence(self, file_exit_mock, comp_hash_stub):
+    app = hash._Application()
+    app.run()
+    file_exit_mock.assert_called()
+  
+  @patch('sys.argv', TEST_SIMPLE_ARGS)
+  def test_get_selected_algorithms_returns_all_supported_on_none(self):
+    app = hash._Application()
+    self.assertEqual(app.selected_algs, hash._Application.get_all_supported_algorithms())
+
+  @patch('sys.argv', TEST_HASH_CHOICE_ARGS)
+  def test_get_selected_algorithms_returns_arg_selected_algorithms(self):
+    app = hash._Application()
+    self.assertEqual(app.selected_algs, TEST_ARG_SELECTED_ALGS)
+  
+  def test_get_supported_hashes_str_returns_all_supported_hashes(self):
+    hash_list_str = hash._Application.get_supported_hashes_str()
+    supported_hashes = hash_list_str.split(' ')
+    for hash_name in supported_hashes:
+      self.assertTrue(hash_name in hash._Application.SUPPORTED_HASHES)
+  
+  #TODO def test_build_argument_parser_contains_required_arguments(self, add_arg_mock):
     
 class HashFileInChunksToHexStr_Func_TestCase(unittest.TestCase):
   @patch('builtins.open', new_callable=mock_open, read_data=TEST_DATA_RAW)

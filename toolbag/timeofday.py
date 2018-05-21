@@ -9,6 +9,7 @@ class TimeOfDay:
         
         self.hour = int(hour)
         self.minute = int(minute)
+        self._duration = self.hour + (self.minute/60)
 
     @classmethod
     def from_24_hour_time(cls, time_str):
@@ -52,19 +53,19 @@ class TimeOfDay:
         except (AttributeError, IndexError, TypeError) as e:
             raise InvalidTime(f'\'{time_str}\' is not a parseable time string. ({e.__class__.__name__})')
 
-    #def __sub__(self, other)
-    #    self.hour - other.hour
+    def hours_since(self, time):
+        return time.hours_until(self)
+
+    def hours_until(self, future):
+        diff = future._duration - self._duration
         
-    #def __lt__(self, other)
-    #def __le__(self, other)
-    #def __eq__(self, other)
-    #def __ne__(self, other)
-    #def __gt__(self, other)
-    #def __ge__(self, other)
+        if diff > 0:
+            return diff
+        else: # Crossed midnight.
+            return 24 - self._duration + future._duration
 
     def __str__(self):
         return f'{self.hour}:{self.minute}'
-
 
     @staticmethod
     def _raise_if_not_valid_time(hour, minute):    
